@@ -180,14 +180,10 @@ pub trait GenerateDigest {
 #[cfg(test)]
 mod test {
 
-    use std::result;
-
     use mockall::{Sequence, mock};
 
     use crate::core::model::{key::SecretKeyShare, signature::Signature};
     use crate::core::repository::key_repository::PublicKeyStore;
-    use crate::platform::key::with_threshold_crypto::{key_generator, secret_key_share};
-    use crate::platform::signature::digest_generator;
 
     use super::*;
     struct DummyPublicKey;
