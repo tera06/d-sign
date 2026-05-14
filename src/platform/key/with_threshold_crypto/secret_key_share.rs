@@ -23,3 +23,29 @@ impl Signable for threshold_crypto::SecretKeyShare {
 
 #[derive(Error, Debug)]
 pub enum SecretKeyShareError {}
+
+#[cfg(test)]
+mod test {
+    use rand::thread_rng;
+    use threshold_crypto::SecretKeySet;
+
+    use crate::{
+        logic::service::key_service::GenerateDigest,
+        platform::signature::digest_generator::DigestGenarator,
+    };
+
+    use super::*;
+
+    #[test]
+    fn secret_key_share_sign_success() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(0, &mut rng);
+
+        let secret_key_share = secret_key_set.secret_key_share(0);
+        let digest_generator = DigestGenarator;
+        let digest = digest_generator.generate_digest("message").unwrap();
+
+        let result = Signable::sign(&secret_key_share, 0, &digest);
+        assert!(result.is_ok());
+    }
+}
