@@ -53,3 +53,109 @@ pub enum PublicKeySetError {
     #[error("Failed to combine signature")]
     FailedCombineSignature,
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        core::model::signature::SignatureShare, logic::service::key_service::GenerateDigest,
+        platform::signature::digest_generator::DigestGenarator,
+    };
+
+    use super::*;
+    use rand::thread_rng;
+    use threshold_crypto::SecretKeySet;
+
+    #[test]
+    fn public_key_set_verify_success() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(0, &mut rng);
+
+        let public_key_set = secret_key_set.public_keys();
+        let secret_key_share = secret_key_set.secret_key_share(0);
+
+        let message = "message";
+        let digest_generator = DigestGenarator;
+        let digest = digest_generator.generate_digest(message).unwrap();
+
+        let signature_share = secret_key_share.sign(&digest.digest);
+        let signature_shares = vec![SignatureShare::new(0, signature_share)];
+
+        let signature = public_key_set
+            .combine_signature_shares(&signature_shares)
+            .unwrap();
+
+        let result = public_key_set.verify(&signature, &digest);
+        let is_valid = result.ok().unwrap();
+
+        assert!(is_valid);
+    }
+
+    #[test]
+    fn public_key_set_verify_failed() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(0, &mut rng);
+
+        let public_key_set = secret_key_set.public_keys();
+        let secret_key_share = secret_key_set.secret_key_share(0);
+
+        let digest_generator = DigestGenarator;
+
+        let fake_message = "fake_message";
+        let fake_digest = digest_generator.generate_digest(fake_message).unwrap();
+
+        let message = "message";
+        let digest = digest_generator.generate_digest(message).unwrap();
+
+        let signature_share = secret_key_share.sign(&digest.digest);
+        let signature_shares = vec![SignatureShare::new(0, signature_share)];
+
+        let signature = public_key_set
+            .combine_signature_shares(&signature_shares)
+            .unwrap();
+
+        let result = public_key_set.verify(&signature, &fake_digest);
+        let is_valid = result.ok().unwrap();
+
+        assert!(!is_valid);
+    }
+
+    #[test]
+    fn public_key_set_combine_sinature_shares_success() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(1, &mut rng);
+
+        let public_key_set = secret_key_set.public_keys();
+
+        let message = "message";
+
+        let share1 = secret_key_set.secret_key_share(0).sign(message);
+        let share2 = secret_key_set.secret_key_share(1).sign(message);
+
+        let shares = vec![
+            SignatureShare::new(0, share1),
+            SignatureShare::new(1, share2),
+        ];
+
+        let result = public_key_set.combine_signature_shares(&shares);
+        assert!(result.is_ok());
+    }
+    #[test]
+    fn publci_key_set_combine_signature_shares_fail() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(1, &mut rng);
+
+        let public_key_set = secret_key_set.public_keys();
+
+        let message = "message";
+
+        let share1 = secret_key_set.secret_key_share(0).sign(message);
+
+        let shares = vec![SignatureShare::new(0, share1)];
+
+        let result = public_key_set.combine_signature_shares(&shares);
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeySetError::FailedCombineSignature,
+        ));
+    }
+}
