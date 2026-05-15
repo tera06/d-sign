@@ -26,3 +26,20 @@ impl Divisible for threshold_crypto::SecretKeySet {
 
 #[derive(Debug, Error)]
 pub enum SecretKeySetErrror {}
+
+#[cfg(test)]
+mod test {
+    use rand::thread_rng;
+    use threshold_crypto::SecretKeySet;
+
+    use super::*;
+    #[test]
+    fn secret_key_set_divide_success() {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(1, &mut rng);
+
+        let shares = secret_key_set.divide(2).unwrap();
+
+        assert_eq!(shares.len(), 2);
+    }
+}
