@@ -35,7 +35,7 @@ impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator
 
         let secret_key_share_repo =
             SecretKeyShareRepository::new("secrete_key_share.enc".to_string(), crypter.clone())
-                .unwrap();
+                .ok_or_else(|| KeyServiceFactoryError::FailedCreateSecretKeyShareRepository)?;
 
         let key_generator = KeyGenerator;
         let digest_generator = DigestGenarator;
@@ -51,4 +51,19 @@ impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator
     }
 }
 #[derive(Debug, Error)]
-pub enum KeyServiceFactoryError {}
+pub enum KeyServiceFactoryError {
+    #[error("Failed to create secret key share reepository")]
+    FailedCreateSecretKeyShareRepository,
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn key_service_factory_build_success() {
+        let factory = KeyServiceFactory;
+        let result = factory.build();
+        assert!(result.is_ok());
+    }
+}
