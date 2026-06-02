@@ -576,7 +576,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "d-kms"
+name = "d-sign"
 version = "0.1.0"
 dependencies = [
  "aes-gcm",

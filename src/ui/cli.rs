@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use crate::ui::runner::AppAction;
 
 #[derive(Parser)]
-#[command(name = "dkms")]
+#[command(name = "dsign")]
 pub struct Cli {
     #[command(subcommand)]
     pub cmd: Command,

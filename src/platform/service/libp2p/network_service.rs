@@ -51,7 +51,7 @@ impl<T, U, V, W> P2pNetworkService<T, U, V, W> {
             )
             .map_err(|_| P2pNetworkServiceError::FailedBuildSwarm)?
             .with_behaviour(|key| {
-                let protocols = vec![(StreamProtocol::new("/d-kms/1.0.0"), ProtocolSupport::Full)];
+                let protocols = vec![(StreamProtocol::new("/d-sign/1.0.0"), ProtocolSupport::Full)];
 
                 let cfg = request_response::Config::default();
 

@@ -170,7 +170,7 @@ pub struct Crypter;
 impl Crypter {
     fn load_master_key(&self) -> Result<Vec<u8>, CrypterError> {
         let base64_key =
-            std::env::var("DKMS_MASTER_KEY").map_err(|_| CrypterError::FailedGetEnvVar)?;
+            std::env::var("DSIGN_MASTER_KEY").map_err(|_| CrypterError::FailedGetEnvVar)?;
         let key = general_purpose::STANDARD
             .decode(base64_key)
             .map_err(|_| CrypterError::FailedBase64Decode)?;
@@ -245,23 +245,23 @@ mod test {
         let key = [1u8; 32];
         let encoded = general_purpose::STANDARD.encode(key);
 
-        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+        unsafe { env::set_var("DSIGN_MASTER_KEY", encoded) };
     }
 
     fn unsetup_master_key() {
-        unsafe { env::remove_var("DKMS_MASTER_KEY") };
+        unsafe { env::remove_var("DSIGN_MASTER_KEY") };
     }
 
     fn setup_invalid_length_master_key() {
         let key = [1u8; 31];
         let encoded = general_purpose::STANDARD.encode(key);
-        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+        unsafe { env::set_var("DSIGN_MASTER_KEY", encoded) };
     }
 
     fn setup_different_master_key() {
         let key = [1u8; 31];
         let encoded = general_purpose::STANDARD.encode(key);
-        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+        unsafe { env::set_var("DSIGN_MASTER_KEY", encoded) };
     }
 
     fn build_public_key() -> PublicKey<PublicKeySet> {
