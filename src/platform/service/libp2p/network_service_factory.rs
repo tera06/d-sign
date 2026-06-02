@@ -30,7 +30,9 @@ impl BuildNetworkSerivce for P2pNetworkServiceFactory {
 
         let secret_key_share_repo =
             SecretKeyShareRepository::new("secrete_key_share.enc".to_string(), crypter.clone())
-                .unwrap();
+                .ok_or_else(|| {
+                    P2pNetworkServiceFactoryError::FailedCreateSecretKeyShareRepository
+                })?;
 
         let key_generator = KeyGenerator;
         let digest_generator = DigestGenarator;
@@ -48,4 +50,20 @@ impl BuildNetworkSerivce for P2pNetworkServiceFactory {
 }
 
 #[derive(Debug, Error)]
-pub enum P2pNetworkServiceFactoryError {}
+pub enum P2pNetworkServiceFactoryError {
+    #[error("Failed to create secret key share repository")]
+    FailedCreateSecretKeyShareRepository,
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn p2p_network_service_factory_build_success() {
+        let factory = P2pNetworkServiceFactory;
+        let result = factory.build();
+        assert!(result.is_ok());
+    }
+}
