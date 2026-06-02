@@ -90,8 +90,12 @@ pub struct SecretKeyShareRepository {
 }
 
 impl SecretKeyShareRepository {
-    pub fn new(file_path: String, crypter: Crypter) -> Self {
-        Self { file_path, crypter }
+    pub fn new(file_path: String, crypter: Crypter) -> Option<Self> {
+        if file_path.trim().is_empty() {
+            return None;
+        }
+
+        Some(Self { file_path, crypter })
     }
     fn get_file_path_with_index(&self, index: usize) -> String {
         format!("{}-{}", self.file_path, index)
@@ -106,7 +110,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
         &self,
         secret_key_share: &crate::core::model::key::SecretKeyShare<Self::TSecretKeyShare>,
     ) -> Result<(), Self::TError> {
-        let serde_secret_key_share = SerdeSecret(&secret_key_share.secret_key_share);
+        let serde_secret_key_share = SerdeSecret(secret_key_share.secret_key_share.clone());
         let secret_key_share_bytes = bincode::serialize(&serde_secret_key_share)
             .map_err(|_| SecretKeyShareRepositoryError::FailedSerialize)?;
         let encrypted_secret_key_share_bytes = self
@@ -177,7 +181,7 @@ impl Crypter {
         Ok(key)
     }
 
-    pub fn encrypt_bytes(&self, plain_data: &[u8]) -> Result<Vec<u8>, CrypterError> {
+    fn encrypt_bytes(&self, plain_data: &[u8]) -> Result<Vec<u8>, CrypterError> {
         let master_key = self.load_master_key()?;
 
         let key = Key::<Aes256Gcm>::from_slice(&master_key);
@@ -195,7 +199,7 @@ impl Crypter {
         Ok(final_bytes)
     }
 
-    pub fn decrypt_bytes(&self, encrypted_bytes: &[u8]) -> Result<Vec<u8>, CrypterError> {
+    fn decrypt_bytes(&self, encrypted_bytes: &[u8]) -> Result<Vec<u8>, CrypterError> {
         let master_key = self.load_master_key()?;
         type NonceSize = <Aes256Gcm as AeadCore>::NonceSize;
         let nonce_size = NonceSize::to_usize();
@@ -216,7 +220,7 @@ impl Crypter {
 
 #[derive(Error, Debug)]
 enum CrypterError {
-    #[error("Faile to get eivironment variable")]
+    #[error("Failed to get eivironment variable")]
     FailedGetEnvVar,
     #[error("Failed to base64 decode")]
     FailedBase64Decode,
@@ -226,4 +230,375 @@ enum CrypterError {
     FailedEncrypt,
     #[error("Failed to decrypt")]
     FailedDecrypt,
+}
+
+#[cfg(test)]
+mod test {
+    use std::env;
+
+    use super::*;
+    use rand::thread_rng;
+    use serial_test::serial;
+    use threshold_crypto::{PublicKeySet, SecretKeySet};
+
+    fn setup_master_key() {
+        let key = [1u8; 32];
+        let encoded = general_purpose::STANDARD.encode(key);
+
+        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+    }
+
+    fn unsetup_master_key() {
+        unsafe { env::remove_var("DKMS_MASTER_KEY") };
+    }
+
+    fn setup_invalid_length_master_key() {
+        let key = [1u8; 31];
+        let encoded = general_purpose::STANDARD.encode(key);
+        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+    }
+
+    fn setup_different_master_key() {
+        let key = [1u8; 31];
+        let encoded = general_purpose::STANDARD.encode(key);
+        unsafe { env::set_var("DKMS_MASTER_KEY", encoded) };
+    }
+
+    fn build_public_key() -> PublicKey<PublicKeySet> {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(1, &mut rng);
+        let public_key_set = secret_key_set.public_keys();
+        PublicKey::new(public_key_set)
+    }
+
+    fn build_public_key_repository(path: String) -> PublicKeyRepository {
+        let crypter = Crypter;
+        PublicKeyRepository::new(path.clone(), crypter)
+    }
+
+    fn build_secret_key_share() -> SecretKeyShare<threshold_crypto::SecretKeyShare> {
+        let mut rng = thread_rng();
+        let secret_key_set = SecretKeySet::random(1, &mut rng);
+        let secret_key_share = secret_key_set.secret_key_share(0);
+        SecretKeyShare::new(0, secret_key_share)
+    }
+
+    fn build_secret_key_share_repository(path: String) -> SecretKeyShareRepository {
+        let crypter = Crypter;
+        SecretKeyShareRepository::new(path, crypter).unwrap()
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_save_success() {
+        setup_master_key();
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+
+        let result = public_key_repo.save(&public_key).await;
+        assert!(result.is_ok());
+
+        let path = Path::new(&path);
+        assert!(path.exists());
+
+        let plain_bytes = bincode::serialize(&public_key.public_key).unwrap();
+        let encrypted_bytes = fs::read(&path).unwrap();
+
+        assert_ne!(plain_bytes, encrypted_bytes);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_save_fail_when_env_var_is_not_set() {
+        unsetup_master_key();
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+        let result = public_key_repo.save(&public_key).await;
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedEncryptPublicKey,
+        ))
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_save_fail_when_env_var_is_invalid() {
+        setup_invalid_length_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+        let result = public_key_repo.save(&public_key).await;
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedEncryptPublicKey,
+        ))
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_save_fail_when_repo_path_is_invalid() {
+        setup_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+        let result = public_key_repo.save(&public_key).await;
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedWriteRepoFile,
+        ))
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_load_success() {
+        setup_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+
+        public_key_repo.save(&public_key).await.unwrap();
+        let result = public_key_repo.load().await.unwrap();
+
+        let original_bytes = bincode::serialize(&public_key.public_key).unwrap();
+        let loaded_bytes = bincode::serialize(&result.public_key).unwrap();
+        assert_eq!(original_bytes, loaded_bytes);
+        let path = Path::new(&path);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_load_fail_when_env_var_is_not_set() {
+        setup_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+
+        public_key_repo.save(&public_key).await.unwrap();
+
+        unsetup_master_key();
+        let result = public_key_repo.load().await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedDecryptPublicKey,
+        ));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_load_fail_when_env_var_is_invalid() {
+        setup_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+
+        public_key_repo.save(&public_key).await.unwrap();
+
+        setup_different_master_key();
+        let result = public_key_repo.load().await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedDecryptPublicKey,
+        ));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn public_key_repository_load_fail_when_repo_path_is_invalid() {
+        setup_master_key();
+
+        let public_key = build_public_key();
+
+        let path = "test_public_key.enc".to_string();
+        let public_key_repo = build_public_key_repository(path.clone());
+
+        public_key_repo.save(&public_key).await.unwrap();
+
+        let invalid_path = "invalid_path".to_string();
+        let public_key_repo = build_public_key_repository(invalid_path.clone());
+        let result = public_key_repo.load().await;
+        assert!(matches!(
+            result.err().unwrap(),
+            PublicKeyRepositoryError::FailedReadRepoFile,
+        ));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_save_success() {
+        setup_master_key();
+
+        let secret_key_share = build_secret_key_share();
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+
+        let result = secret_key_share_repo.save(&secret_key_share).await;
+        assert!(result.is_ok());
+
+        let path = Path::new("test_secret_key_share.enc-0");
+        assert!(path.exists());
+
+        let serde_secret_key_share = SerdeSecret(secret_key_share.secret_key_share.clone());
+        let plain_bytes = bincode::serialize(&serde_secret_key_share).unwrap();
+
+        let encrypted_bytes = fs::read(&path).unwrap();
+        assert_ne!(plain_bytes, encrypted_bytes);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_save_fail_when_env_var_is_not_set() {
+        unsetup_master_key();
+
+        let secret_key_share = build_secret_key_share();
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+
+        let result = secret_key_share_repo.save(&secret_key_share).await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            SecretKeyShareRepositoryError::FailedEncryptSecretKeyShare
+        ));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_save_fail_when_env_var_is_invalid() {
+        setup_invalid_length_master_key();
+        let secret_key_share = build_secret_key_share();
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+
+        let result = secret_key_share_repo.save(&secret_key_share).await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            SecretKeyShareRepositoryError::FailedEncryptSecretKeyShare
+        ));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_created_fail_when_repo_path_is_invalid() {
+        setup_master_key();
+
+        let path = "".to_string();
+        let crypter = Crypter;
+        let result = SecretKeyShareRepository::new(path, crypter);
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_load_success() {
+        setup_master_key();
+
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+        let secret_key_share = build_secret_key_share();
+
+        secret_key_share_repo.save(&secret_key_share).await.unwrap();
+
+        let result = secret_key_share_repo.load(0).await.unwrap();
+
+        let serde_secret_key_share = SerdeSecret(secret_key_share.secret_key_share);
+        let save_bytes = bincode::serialize(&serde_secret_key_share).unwrap();
+
+        let serde_secret_key_share = SerdeSecret(result.secret_key_share);
+        let load_bytes = bincode::serialize(&serde_secret_key_share).unwrap();
+
+        assert_eq!(save_bytes, load_bytes);
+
+        let path = Path::new("test_secret_key_share.enc-0");
+        assert!(path.exists());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_load_fail_when_env_var_is_unset() {
+        setup_master_key();
+
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+        let secret_key_share = build_secret_key_share();
+
+        secret_key_share_repo.save(&secret_key_share).await.unwrap();
+
+        unsetup_master_key();
+
+        let result = secret_key_share_repo.load(0).await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            SecretKeyShareRepositoryError::FailedDecryptSecretKeyShare
+        ));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_load_fail_when_env_var_is_invalid() {
+        setup_master_key();
+
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+        let secret_key_share = build_secret_key_share();
+
+        secret_key_share_repo.save(&secret_key_share).await.unwrap();
+
+        setup_invalid_length_master_key();
+
+        let result = secret_key_share_repo.load(0).await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            SecretKeyShareRepositoryError::FailedDecryptSecretKeyShare
+        ));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn secret_key_share_repository_load_fail_when_repository_path_is_invalid() {
+        setup_master_key();
+        let path = "test_secret_key_share.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+        let secret_key_share = build_secret_key_share();
+
+        secret_key_share_repo.save(&secret_key_share).await.unwrap();
+
+        let path = "invalid.enc".to_string();
+        let secret_key_share_repo = build_secret_key_share_repository(path.clone());
+
+        let result = secret_key_share_repo.load(0).await;
+
+        assert!(matches!(
+            result.err().unwrap(),
+            SecretKeyShareRepositoryError::FailedReadRepoFile
+        ));
+    }
 }
