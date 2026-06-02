@@ -28,26 +28,18 @@ use crate::{
         key_service::{GenerateDigest, GenerateKey, KeyService},
         network_service::NetworkService,
     },
-    platform::{
-        repository::with_threshold_crypto::key_repository::SecretKeyShareRepository,
-        service::libp2p::behaviour::{MyBehaviour, MyBehaviourEvent, SignRequest, SignResponse},
+    platform::service::libp2p::behaviour::{
+        MyBehaviour, MyBehaviourEvent, SignRequest, SignResponse,
     },
 };
 
 pub struct P2pNetworkService<T, U, V, W> {
-    secret_key_share_repo: SecretKeyShareRepository,
     key_service: KeyService<T, U, V, W>,
 }
 
 impl<T, U, V, W> P2pNetworkService<T, U, V, W> {
-    pub fn new(
-        secret_key_share_repo: SecretKeyShareRepository,
-        key_service: KeyService<T, U, V, W>,
-    ) -> Self {
-        Self {
-            secret_key_share_repo,
-            key_service,
-        }
+    pub fn new(key_service: KeyService<T, U, V, W>) -> Self {
+        Self { key_service }
     }
     fn create_swarm(&self) -> Result<Swarm<MyBehaviour>, P2pNetworkServiceError> {
         let swarm = SwarmBuilder::with_new_identity()
@@ -130,7 +122,7 @@ where
     async fn start_server(&self, index: usize) -> Result<(), Self::TError> {
         let mut swarm = self.create_swarm()?;
 
-        swarm.listen_on(
+        let _ = swarm.listen_on(
             "/ip4/0.0.0.0/tcp/0"
                 .parse()
                 .map_err(|_| P2pNetworkServiceError::FailedAddrParse)?,
@@ -209,7 +201,7 @@ where
                             }
                         };
 
-                    swarm
+                    let _ = swarm
                         .behaviour_mut()
                         .req_res
                         .send_response(channel, response);
@@ -225,7 +217,7 @@ where
     async fn client_sign(&self, message: String, threshold: usize) -> Result<(), Self::TError> {
         let mut swarm = self.create_swarm()?;
 
-        swarm.listen_on(
+        let _ = swarm.listen_on(
             "/ip4/0.0.0.0/tcp/0"
                 .parse()
                 .map_err(|_| P2pNetworkServiceError::FailedAddrParse)?,
@@ -346,8 +338,7 @@ pub enum P2pNetworkServiceError {
     FailedBuildSwarm,
     #[error("Failed to parse address")]
     FailedAddrParse,
-    #[error("Failed to load secret key share from repository")]
-    FailedLoadSecretKeyShare,
+
     #[error("Failed to bincode serialize")]
     FailedBincodeSerialize,
     #[error("Not found peer")]

@@ -43,7 +43,7 @@ impl BuildNetworkSerivce for P2pNetworkServiceFactory {
             key_generator,
             digest_generator,
         );
-        let network_service = P2pNetworkService::new(secret_key_share_repo, key_service);
+        let network_service = P2pNetworkService::new(key_service);
 
         Ok(network_service)
     }
