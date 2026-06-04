@@ -258,7 +258,7 @@ where
         let req = SignRequest {
             request_id: request_id.clone(),
             timestamp,
-            message: general_purpose::STANDARD.encode(message.as_bytes()),
+            message: message.clone(),
         };
 
         for peer_id in discovered_peer_ids {

@@ -38,3 +38,4 @@ thiserror = "2.0"
 [dev-dependencies]
 mockall = "0.13"
 serial_test = "3.4.0"
+assert_cmd = "2"

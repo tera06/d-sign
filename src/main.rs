@@ -3,13 +3,9 @@ use std::env;
 use anyhow::Result;
 use clap::Parser;
 
-use crate::ui::cli;
-use crate::ui::runner;
+use d_sign::ui::cli;
+use d_sign::ui::runner;
 
-mod core;
-mod logic;
-mod platform;
-mod ui;
 #[tokio::main]
 async fn main() -> Result<()> {
     if env::var("RUST_LOG").is_err() {
