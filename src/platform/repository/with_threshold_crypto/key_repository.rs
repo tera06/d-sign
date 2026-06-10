@@ -75,7 +75,7 @@ pub enum PublicKeyRepositoryError {
     FailedEncryptPublicKey,
     #[error("Failed to write public key into repository file")]
     FailedWriteRepoFile,
-    #[error("Faile to read public key from repository file")]
+    #[error("Failed to read public key from repository file")]
     FailedReadRepoFile,
     #[error("Failed to decrypt public key")]
     FailedDecryptPublicKey,
@@ -156,7 +156,7 @@ pub enum SecretKeyShareRepositoryError {
     FailedEncryptSecretKeyShare,
     #[error("Failed to write secret key share into repository file")]
     FailedWriteRepoFile,
-    #[error("Faile to read secret key share from repository file")]
+    #[error("Failed to read secret key share from repository file")]
     FailedReadRepoFile,
     #[error("Failed to decrypt secret key share")]
     FailedDecryptSecretKeyShare,
@@ -220,7 +220,7 @@ impl Crypter {
 
 #[derive(Error, Debug)]
 enum CrypterError {
-    #[error("Failed to get eivironment variable")]
+    #[error("Failed to get environment variable")]
     FailedGetEnvVar,
     #[error("Failed to base64 decode")]
     FailedBase64Decode,

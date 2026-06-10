@@ -385,7 +385,7 @@ async fn load_share(index: usize) -> Result<(SecretKeyShare, PublicKeySet)> {
     let share_path = format!("share-{}.key", index);
     let serde_share_bytes = fs::read(share_path).context("Failed to read share file")?;
     let serde_share: SerdeSecret<SecretKeyShare> =
-        bincode::deserialize(&serde_share_bytes).context("Faile to deserialize share serde")?;
+        bincode::deserialize(&serde_share_bytes).context("Failed to deserialize share serde")?;
     let key_share = serde_share.into_inner();
 
     let pubset_bytes = fs::read("pubset.key").context("Failed to read pubset.key")?;
