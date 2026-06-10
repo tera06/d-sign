@@ -88,7 +88,7 @@ where
         let digest = self
             .digest_generator
             .generate_digest(message)
-            .map_err(|_| KeyServiceError::FailedGenarateDigest)?;
+            .map_err(|_| KeyServiceError::FailedGenerateDigest)?;
 
         let signature_share = secret_key_share
             .sign(&digest)
@@ -117,7 +117,7 @@ where
         let digest = self
             .digest_generator
             .generate_digest(message)
-            .map_err(|_| KeyServiceError::FailedGenarateDigest)?;
+            .map_err(|_| KeyServiceError::FailedGenerateDigest)?;
 
         let is_verify = public_key
             .verify(&signature, &digest)
@@ -148,7 +148,7 @@ pub enum KeyServiceError {
     FailedLoadSecretKeyShare,
 
     #[error("Failed to generate digest")]
-    FailedGenarateDigest,
+    FailedGenerateDigest,
 
     #[error("Failed to sign digest")]
     FailedSignDigest,
