@@ -25,7 +25,7 @@ impl Divisible for threshold_crypto::SecretKeySet {
 }
 
 #[derive(Debug, Error)]
-pub enum SecretKeySetErrror {}
+pub enum SecretKeySetError {}
 
 #[cfg(test)]
 mod test {
