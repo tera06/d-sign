@@ -5,7 +5,7 @@ use crate::core::model::key::{Divisible, SecretKeyShare};
 impl Divisible for threshold_crypto::SecretKeySet {
     type TSecretKeyShare = threshold_crypto::SecretKeyShare;
 
-    type TError = SecretKeySetErrror;
+    type TError = SecretKeySetError;
 
     fn divide(
         &self,
