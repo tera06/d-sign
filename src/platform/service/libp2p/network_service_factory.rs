@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::{
-    logic::service::{key_service::KeyService, network_service_factory::BuildNetworkSerivce},
+    logic::service::{key_service::KeyService, network_service_factory::BuildNetworkService},
     platform::{
         key::with_threshold_crypto::key_generator::KeyGenerator,
         repository::with_threshold_crypto::key_repository::{
@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub struct P2pNetworkServiceFactory;
-impl BuildNetworkSerivce for P2pNetworkServiceFactory {
+impl BuildNetworkService for P2pNetworkServiceFactory {
     type TError = P2pNetworkServiceFactoryError;
 
     type TNetworkService = P2pNetworkService<

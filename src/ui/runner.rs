@@ -3,7 +3,7 @@ use thiserror::Error;
 use crate::{
     logic::service::{
         key_service_factory::BuildKeyService, network_service::NetworkService,
-        network_service_factory::BuildNetworkSerivce,
+        network_service_factory::BuildNetworkService,
     },
     platform::service::{
         key_service_factory::KeyServiceFactory,
