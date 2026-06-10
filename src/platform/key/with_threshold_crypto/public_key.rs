@@ -58,7 +58,7 @@ pub enum PublicKeySetError {
 mod test {
     use crate::{
         core::model::signature::SignatureShare, logic::service::key_service::GenerateDigest,
-        platform::signature::digest_generator::DigestGenarator,
+        platform::signature::digest_generator::DigestGenerator,
     };
 
     use super::*;
@@ -74,7 +74,7 @@ mod test {
         let secret_key_share = secret_key_set.secret_key_share(0);
 
         let message = "message";
-        let digest_generator = DigestGenarator;
+        let digest_generator = DigestGenerator;
         let digest = digest_generator.generate_digest(message).unwrap();
 
         let signature_share = secret_key_share.sign(&digest.digest);
@@ -98,7 +98,7 @@ mod test {
         let public_key_set = secret_key_set.public_keys();
         let secret_key_share = secret_key_set.secret_key_share(0);
 
-        let digest_generator = DigestGenarator;
+        let digest_generator = DigestGenerator;
 
         let fake_message = "fake_message";
         let fake_digest = digest_generator.generate_digest(fake_message).unwrap();

@@ -7,13 +7,13 @@ use crate::{
         repository::with_threshold_crypto::key_repository::{
             Crypter, PublicKeyRepository, SecretKeyShareRepository,
         },
-        signature::digest_generator::DigestGenarator,
+        signature::digest_generator::DigestGenerator,
     },
 };
 
 pub struct KeyServiceFactory;
 
-impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator, DigestGenarator>
+impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator, DigestGenerator>
     for KeyServiceFactory
 {
     type TError = KeyServiceFactoryError;
@@ -25,7 +25,7 @@ impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator
             PublicKeyRepository,
             SecretKeyShareRepository,
             KeyGenerator,
-            DigestGenarator,
+            DigestGenerator,
         >,
         Self::TError,
     > {
@@ -38,7 +38,7 @@ impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator
                 .ok_or_else(|| KeyServiceFactoryError::FailedCreateSecretKeyShareRepository)?;
 
         let key_generator = KeyGenerator;
-        let digest_generator = DigestGenarator;
+        let digest_generator = DigestGenerator;
 
         let key_service = KeyService::new(
             public_key_repo,

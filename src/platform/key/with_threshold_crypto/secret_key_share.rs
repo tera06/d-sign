@@ -31,7 +31,7 @@ mod test {
 
     use crate::{
         logic::service::key_service::GenerateDigest,
-        platform::signature::digest_generator::DigestGenarator,
+        platform::signature::digest_generator::DigestGenerator,
     };
 
     use super::*;
@@ -42,7 +42,7 @@ mod test {
         let secret_key_set = SecretKeySet::random(0, &mut rng);
 
         let secret_key_share = secret_key_set.secret_key_share(0);
-        let digest_generator = DigestGenarator;
+        let digest_generator = DigestGenerator;
         let digest = digest_generator.generate_digest("message").unwrap();
 
         let result = Signable::sign(&secret_key_share, 0, &digest);

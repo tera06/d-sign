@@ -8,7 +8,7 @@ use crate::{
             Crypter, PublicKeyRepository, SecretKeyShareRepository,
         },
         service::libp2p::network_service::P2pNetworkService,
-        signature::digest_generator::DigestGenarator,
+        signature::digest_generator::DigestGenerator,
     },
 };
 
@@ -20,7 +20,7 @@ impl BuildNetworkSerivce for P2pNetworkServiceFactory {
         PublicKeyRepository,
         SecretKeyShareRepository,
         KeyGenerator,
-        DigestGenarator,
+        DigestGenerator,
     >;
 
     fn build(&self) -> Result<Self::TNetworkService, Self::TError> {
@@ -35,7 +35,7 @@ impl BuildNetworkSerivce for P2pNetworkServiceFactory {
                 })?;
 
         let key_generator = KeyGenerator;
-        let digest_generator = DigestGenarator;
+        let digest_generator = DigestGenerator;
 
         let key_service = KeyService::new(
             public_key_repo,
