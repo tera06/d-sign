@@ -101,21 +101,26 @@ impl<T, U, V, W> P2pNetworkService<T, U, V, W> {
     }
 }
 
+#[async_trait::async_trait]
 impl<T, U, V, W> NetworkService for P2pNetworkService<T, U, V, W>
 where
-    T: PublicKeyStore<TPublicKey = V::TPublicKey>,
-    U: SecretKeyShareStore<TSecretKeyShare = <V::TSecretKey as Divisible>::TSecretKeyShare>,
-    V: GenerateKey,
-    W: GenerateDigest<TDigest = <V::TPublicKey as Verifiable>::TDigest>,
+    T: PublicKeyStore<TPublicKey = V::TPublicKey> + Send + Sync,
+    U: SecretKeyShareStore<TSecretKeyShare = <V::TSecretKey as Divisible>::TSecretKeyShare>
+        + Send
+        + Sync,
+    V: GenerateKey + Send + Sync,
+    W: GenerateDigest<TDigest = <V::TPublicKey as Verifiable>::TDigest> + Send + Sync,
     V::TSecretKey: Divisible,
-    V::TPublicKey:
-        CombineSignatureShares<TSignature = <V::TPublicKey as Verifiable>::TSignature> + Verifiable,
+    V::TPublicKey: CombineSignatureShares<TSignature = <V::TPublicKey as Verifiable>::TSignature>
+        + Verifiable
+        + Send
+        + Sync,
     <V::TSecretKey as Divisible>::TSecretKeyShare:
-        Signable<TDigest = <V::TPublicKey as Verifiable>::TDigest>,
+        Signable<TDigest = <V::TPublicKey as Verifiable>::TDigest> + Send + Sync,
     <<<V as GenerateKey>::TSecretKey as Divisible>::TSecretKeyShare as Signable>::TSignatureShare:
-        Serialize + for<'de> Deserialize<'de>,
+        Serialize + for<'de> Deserialize<'de> + Send + Sync,
     <<V as GenerateKey>::TPublicKey as CombineSignatureShares>::TSignatureShare:
-        for<'de> Deserialize<'de>,
+        for<'de> Deserialize<'de> + Send + Sync,
 {
     type TError = P2pNetworkServiceError;
 

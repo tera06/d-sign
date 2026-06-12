@@ -1,5 +1,5 @@
 use crate::core::model::key::{PublicKey, SecretKeyShare};
-
+#[async_trait::async_trait]
 pub trait PublicKeyStore {
     type TPublicKey;
     type TError: std::error::Error + Send + Sync + 'static;
@@ -7,6 +7,7 @@ pub trait PublicKeyStore {
     async fn load(&self) -> Result<PublicKey<Self::TPublicKey>, Self::TError>;
 }
 
+#[async_trait::async_trait]
 pub trait SecretKeyShareStore {
     type TSecretKeyShare;
     type TError: std::error::Error + Send + Sync + 'static;

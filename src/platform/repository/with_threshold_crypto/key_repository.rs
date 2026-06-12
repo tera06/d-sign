@@ -24,6 +24,7 @@ impl PublicKeyRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl PublicKeyStore for PublicKeyRepository {
     type TPublicKey = threshold_crypto::PublicKeySet;
 
@@ -101,6 +102,8 @@ impl SecretKeyShareRepository {
         format!("{}-{}", self.file_path, index)
     }
 }
+
+#[async_trait::async_trait]
 impl SecretKeyShareStore for SecretKeyShareRepository {
     type TSecretKeyShare = threshold_crypto::SecretKeyShare;
 

@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 use crate::core::{
     model::{
         key::{CombineSignatureShares, Divisible, PublicKey, SecretKey, Signable, Verifiable},
@@ -7,6 +5,7 @@ use crate::core::{
     },
     repository::key_repository::{PublicKeyStore, SecretKeyShareStore},
 };
+use thiserror::Error;
 
 pub struct KeyService<T, U, V, W> {
     public_key_repo: T,
@@ -275,7 +274,7 @@ mod test {
 
     mock! {
         PublicKeyStore {}
-
+        #[async_trait::async_trait]
         impl PublicKeyStore for PublicKeyStore {
             type TPublicKey = DummyPublicKey;
             type TError = MockError;
@@ -287,7 +286,7 @@ mod test {
 
     mock! {
         SecretKeyShareStore{}
-
+        #[async_trait::async_trait]
         impl SecretKeyShareStore for SecretKeyShareStore{
             type TSecretKeyShare =DummySecretKeyShare;
             type TError = MockError;
