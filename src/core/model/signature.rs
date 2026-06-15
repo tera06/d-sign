@@ -1,8 +1,10 @@
+use crate::core::model::value::ShareIndex;
+
 pub struct Digest<T> {
     pub digest: T,
 }
 pub struct SignatureShare<T> {
-    pub index: usize,
+    pub index: ShareIndex,
     pub signature_share: T,
 }
 
@@ -17,7 +19,7 @@ impl<T> Digest<T> {
 }
 
 impl<T> SignatureShare<T> {
-    pub fn new(index: usize, signature_share: T) -> Self {
+    pub fn new(index: ShareIndex, signature_share: T) -> Self {
         Self {
             index,
             signature_share,

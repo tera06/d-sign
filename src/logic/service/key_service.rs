@@ -181,6 +181,7 @@ mod test {
 
     use mockall::{Sequence, mock};
 
+    use crate::core::model::value::ShareIndex;
     use crate::core::model::{key::SecretKeyShare, signature::Signature};
     use crate::core::repository::key_repository::PublicKeyStore;
 
@@ -238,7 +239,7 @@ mod test {
         ) -> Result<Vec<crate::core::model::key::SecretKeyShare<Self::TSecretKeyShare>>, Self::TError>
         {
             Ok((0..num_divide)
-                .map(|i| SecretKeyShare::new(i, DummySecretKeyShare))
+                .map(|i| SecretKeyShare::new(ShareIndex::new(i), DummySecretKeyShare))
                 .collect())
         }
     }
@@ -252,7 +253,7 @@ mod test {
 
         fn sign(
             &self,
-            index: usize,
+            index: ShareIndex,
             _digest: &Digest<Self::TDigest>,
         ) -> Result<SignatureShare<Self::TSignatureShare>, Self::TError> {
             Ok(SignatureShare {
@@ -403,7 +404,7 @@ mod test {
             .expect_load()
             .times(1)
             .in_sequence(&mut seq)
-            .returning(|_| Ok(SecretKeyShare::new(0, DummySecretKeyShare)));
+            .returning(|_| Ok(SecretKeyShare::new(ShareIndex::new(0), DummySecretKeyShare)));
 
         digest_generator
             .expect_generate_digest()
@@ -476,8 +477,8 @@ mod test {
         );
 
         let signature_shares = vec![
-            SignatureShare::new(0, DummySignatureShare),
-            SignatureShare::new(1, DummySignatureShare),
+            SignatureShare::new(ShareIndex::new(0), DummySignatureShare),
+            SignatureShare::new(ShareIndex::new(1), DummySignatureShare),
         ];
         let result = key_service
             .verify_signature(&signature_shares, "message")
@@ -508,8 +509,8 @@ mod test {
         );
 
         let signature_shares = vec![
-            SignatureShare::new(0, DummySignatureShare),
-            SignatureShare::new(1, DummySignatureShare),
+            SignatureShare::new(ShareIndex::new(0), DummySignatureShare),
+            SignatureShare::new(ShareIndex::new(1), DummySignatureShare),
         ];
         let result = key_service
             .verify_signature(&signature_shares, "message")

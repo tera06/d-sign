@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::core::model::{key::Signable, signature::SignatureShare};
+use crate::core::model::{key::Signable, signature::SignatureShare, value::ShareIndex};
 
 impl Signable for threshold_crypto::SecretKeyShare {
     type TDigest = Vec<u8>;
@@ -11,7 +11,7 @@ impl Signable for threshold_crypto::SecretKeyShare {
 
     fn sign(
         &self,
-        index: usize,
+        index: ShareIndex,
         digest: &crate::core::model::signature::Digest<Self::TDigest>,
     ) -> Result<crate::core::model::signature::SignatureShare<Self::TSignatureShare>, Self::TError>
     {
@@ -45,7 +45,7 @@ mod test {
         let digest_generator = DigestGenerator;
         let digest = digest_generator.generate_digest("message").unwrap();
 
-        let result = Signable::sign(&secret_key_share, 0, &digest);
+        let result = Signable::sign(&secret_key_share, ShareIndex::new(0), &digest);
         assert!(result.is_ok());
     }
 }

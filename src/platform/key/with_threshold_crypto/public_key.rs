@@ -38,7 +38,7 @@ impl CombineSignatureShares for threshold_crypto::PublicKeySet {
     ) -> Result<crate::core::model::signature::Signature<Self::TSignature>, Self::TError> {
         let shares_for_combine = signature_shares
             .iter()
-            .map(|s| (s.index, &s.signature_share));
+            .map(|s| (s.index.get(), &s.signature_share));
 
         let signature = self
             .combine_signatures(shares_for_combine)
@@ -57,7 +57,8 @@ pub enum PublicKeySetError {
 #[cfg(test)]
 mod test {
     use crate::{
-        core::model::signature::SignatureShare, logic::service::key_service::GenerateDigest,
+        core::model::{signature::SignatureShare, value::ShareIndex},
+        logic::service::key_service::GenerateDigest,
         platform::signature::digest_generator::DigestGenerator,
     };
 
@@ -78,7 +79,7 @@ mod test {
         let digest = digest_generator.generate_digest(message).unwrap();
 
         let signature_share = secret_key_share.sign(&digest.digest);
-        let signature_shares = vec![SignatureShare::new(0, signature_share)];
+        let signature_shares = vec![SignatureShare::new(ShareIndex::new(0), signature_share)];
 
         let signature = public_key_set
             .combine_signature_shares(&signature_shares)
@@ -107,7 +108,7 @@ mod test {
         let digest = digest_generator.generate_digest(message).unwrap();
 
         let signature_share = secret_key_share.sign(&digest.digest);
-        let signature_shares = vec![SignatureShare::new(0, signature_share)];
+        let signature_shares = vec![SignatureShare::new(ShareIndex::new(0), signature_share)];
 
         let signature = public_key_set
             .combine_signature_shares(&signature_shares)
@@ -132,8 +133,8 @@ mod test {
         let share2 = secret_key_set.secret_key_share(1).sign(message);
 
         let shares = vec![
-            SignatureShare::new(0, share1),
-            SignatureShare::new(1, share2),
+            SignatureShare::new(ShareIndex::new(0), share1),
+            SignatureShare::new(ShareIndex::new(1), share2),
         ];
 
         let result = public_key_set.combine_signature_shares(&shares);
@@ -150,7 +151,7 @@ mod test {
 
         let share1 = secret_key_set.secret_key_share(0).sign(message);
 
-        let shares = vec![SignatureShare::new(0, share1)];
+        let shares = vec![SignatureShare::new(ShareIndex::new(0), share1)];
 
         let result = public_key_set.combine_signature_shares(&shares);
         assert!(matches!(

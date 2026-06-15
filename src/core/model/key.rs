@@ -1,4 +1,7 @@
-use crate::core::model::signature::{Digest, Signature, SignatureShare};
+use crate::core::model::{
+    signature::{Digest, Signature, SignatureShare},
+    value::ShareIndex,
+};
 pub struct PublicKey<T> {
     pub public_key: T,
 }
@@ -8,7 +11,7 @@ pub struct SecretKey<T> {
     secret_key: T,
 }
 pub struct SecretKeyShare<T> {
-    pub index: usize,
+    pub index: ShareIndex,
     pub secret_key_share: T,
 }
 pub trait Verifiable {
@@ -38,7 +41,7 @@ pub trait Signable {
 
     fn sign(
         &self,
-        index: usize,
+        index: ShareIndex,
         digest: &Digest<Self::TDigest>,
     ) -> Result<SignatureShare<Self::TSignatureShare>, Self::TError>;
 }
@@ -107,7 +110,7 @@ impl<T> SecretKeyShare<T>
 where
     T: Signable,
 {
-    pub fn new(index: usize, secret_key_share: T) -> Self {
+    pub fn new(index: ShareIndex, secret_key_share: T) -> Self {
         Self {
             index,
             secret_key_share,
@@ -125,7 +128,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::model::signature::{Digest, Signature, SignatureShare};
+    use crate::core::model::{
+        signature::{Digest, Signature, SignatureShare},
+        value::ShareIndex,
+    };
     use mockall::{mock, predicate::*};
     use thiserror::Error;
 
@@ -191,7 +197,7 @@ mod tests {
 
             fn sign(
                 &self,
-                index: usize,
+                index: ShareIndex,
                 digest: &Digest<u32>,
             ) -> Result<SignatureShare<u32>, MockError>;
         }
@@ -236,7 +242,10 @@ mod tests {
 
         let public_key = PublicKey::new(mock);
 
-        let signature_shares = vec![SignatureShare::new(1, 10), SignatureShare::new(2, 10)];
+        let signature_shares = vec![
+            SignatureShare::new(ShareIndex::new(1), 10),
+            SignatureShare::new(ShareIndex::new(2), 10),
+        ];
         let result = public_key
             .combine_signature_shares(&signature_shares)
             .unwrap();
@@ -253,7 +262,10 @@ mod tests {
 
         let public_key = PublicKey::new(mock);
 
-        let signature_shares = vec![SignatureShare::new(1, 10), SignatureShare::new(2, 10)];
+        let signature_shares = vec![
+            SignatureShare::new(ShareIndex::new(1), 10),
+            SignatureShare::new(ShareIndex::new(2), 10),
+        ];
         let result = public_key.combine_signature_shares(&signature_shares);
         let err = result.err().unwrap();
 
@@ -298,15 +310,15 @@ mod tests {
         let mut mock = MockDivisibleKey::new();
         mock.expect_divide().times(1).returning(|_| {
             Ok(vec![
-                SecretKeyShare::new(1, MockSignableShare::new()),
-                SecretKeyShare::new(2, MockSignableShare::new()),
+                SecretKeyShare::new(ShareIndex::new(1), MockSignableShare::new()),
+                SecretKeyShare::new(ShareIndex::new(2), MockSignableShare::new()),
             ])
         });
 
         let secret_key = SecretKey::new(1, 2, mock).unwrap();
         let result = secret_key.divide().unwrap();
-        assert_eq!(result[0].index, 1);
-        assert_eq!(result[1].index, 2);
+        assert_eq!(result[0].index, ShareIndex::new(1));
+        assert_eq!(result[1].index, ShareIndex::new(2));
     }
 
     #[test]
@@ -328,12 +340,12 @@ mod tests {
         let mut mock = MockSignableShare::new();
         mock.expect_sign()
             .times(1)
-            .returning(|_, _| Ok(SignatureShare::new(1, 100)));
+            .returning(|_, _| Ok(SignatureShare::new(ShareIndex::new(1), 100)));
 
-        let secret_key_share = SecretKeyShare::new(1, mock);
+        let secret_key_share = SecretKeyShare::new(ShareIndex::new(1), mock);
         let digest = Digest::new(100);
         let result = secret_key_share.sign(&digest).unwrap();
-        assert_eq!(result.index, 1);
+        assert_eq!(result.index, ShareIndex::new(1));
         assert_eq!(result.signature_share, 100);
     }
 
@@ -343,7 +355,7 @@ mod tests {
         mock.expect_sign()
             .times(1)
             .returning(|_, _| Err(MockError::FailedSign));
-        let secret_key_share = SecretKeyShare::new(1, mock);
+        let secret_key_share = SecretKeyShare::new(ShareIndex::new(1), mock);
         let digest = Digest::new(100);
         let result = secret_key_share.sign(&digest);
 

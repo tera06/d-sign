@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::core::model::key::{Divisible, SecretKeyShare};
+use crate::core::model::{
+    key::{Divisible, SecretKeyShare},
+    value::ShareIndex,
+};
 
 impl Divisible for threshold_crypto::SecretKeySet {
     type TSecretKeyShare = threshold_crypto::SecretKeyShare;
@@ -16,7 +19,7 @@ impl Divisible for threshold_crypto::SecretKeySet {
 
         for i in 0..num_divide {
             let share = self.secret_key_share(i);
-            let share = SecretKeyShare::new(i, share);
+            let share = SecretKeyShare::new(ShareIndex::new(i), share);
             secret_key_shares.push(share);
         }
 

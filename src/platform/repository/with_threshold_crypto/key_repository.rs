@@ -10,7 +10,10 @@ use thiserror::Error;
 use threshold_crypto::serde_impl::SerdeSecret;
 
 use crate::core::{
-    model::key::{PublicKey, SecretKeyShare},
+    model::{
+        key::{PublicKey, SecretKeyShare},
+        value::ShareIndex,
+    },
     repository::key_repository::{PublicKeyStore, SecretKeyShareStore},
 };
 pub struct PublicKeyRepository {
@@ -121,7 +124,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
             .encrypt_bytes(&secret_key_share_bytes)
             .map_err(|_| SecretKeyShareRepositoryError::FailedEncryptSecretKeyShare)?;
 
-        let file_path = self.get_file_path_with_index(secret_key_share.index);
+        let file_path = self.get_file_path_with_index(secret_key_share.index.get());
         let file_path = Path::new(&file_path);
         fs::write(file_path, encrypted_secret_key_share_bytes)
             .map_err(|_| SecretKeyShareRepositoryError::FailedWriteRepoFile)?;
@@ -145,7 +148,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
                 .map_err(|_| SecretKeyShareRepositoryError::FailedDeserialize)?;
 
         let secret_key_share = serde_secret_key_share.into_inner();
-        let secret_key_share = SecretKeyShare::new(index, secret_key_share);
+        let secret_key_share = SecretKeyShare::new(ShareIndex::new(index), secret_key_share);
 
         Ok(secret_key_share)
     }
@@ -283,7 +286,7 @@ mod test {
         let mut rng = thread_rng();
         let secret_key_set = SecretKeySet::random(1, &mut rng);
         let secret_key_share = secret_key_set.secret_key_share(0);
-        SecretKeyShare::new(0, secret_key_share)
+        SecretKeyShare::new(ShareIndex::new(0), secret_key_share)
     }
 
     fn build_secret_key_share_repository(path: String) -> SecretKeyShareRepository {

@@ -21,6 +21,7 @@ use crate::{
         model::{
             key::{CombineSignatureShares, Divisible, Signable, Verifiable},
             signature::SignatureShare,
+            value::ShareIndex,
         },
         repository::key_repository::{PublicKeyStore, SecretKeyShareStore},
     },
@@ -291,7 +292,7 @@ where
                              if let (Some(index), Some(encoded_signature_share)) = (response.index, response.sign_share){
                                  match self.decode_signature_share(&encoded_signature_share){
                                      Ok(signature_share)=>{
-                                        let signature_share = SignatureShare::new(index, signature_share);
+                                        let signature_share = SignatureShare::new(ShareIndex::new(index), signature_share);
                                          signature_shares.push(signature_share);
 
                                      }
