@@ -71,7 +71,7 @@ where
 
     pub async fn sign_message(
         &self,
-        index: usize,
+        index: ShareIndex,
         message: &str,
     ) -> Result<
         SignatureShare<
@@ -81,7 +81,7 @@ where
     > {
         let secret_key_share = self
             .secret_key_share_repo
-            .load(ShareIndex::new(index))
+            .load(index)
             .await
             .map_err(|_| KeyServiceError::FailedLoadSecretKeyShare)?;
 
@@ -420,7 +420,9 @@ mod test {
             digest_generator,
         );
 
-        let result = key_service.sign_message(0, "message").await;
+        let result = key_service
+            .sign_message(ShareIndex::new(0), "message")
+            .await;
         assert!(result.is_ok());
     }
 
@@ -443,7 +445,9 @@ mod test {
             digest_generator,
         );
 
-        let result = key_service.sign_message(0, "message").await;
+        let result = key_service
+            .sign_message(ShareIndex::new(0), "message")
+            .await;
         assert!(matches!(
             result.err().unwrap(),
             KeyServiceError::FailedLoadSecretKeyShare
