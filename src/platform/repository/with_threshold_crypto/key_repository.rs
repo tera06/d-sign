@@ -133,9 +133,9 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
 
     async fn load(
         &self,
-        index: usize,
+        index: ShareIndex,
     ) -> Result<crate::core::model::key::SecretKeyShare<Self::TSecretKeyShare>, Self::TError> {
-        let file_path = self.get_file_path_with_index(index);
+        let file_path = self.get_file_path_with_index(index.get());
         let file_path = Path::new(&file_path);
         let encrypted_serde_secret_key_share_bytes =
             fs::read(file_path).map_err(|_| SecretKeyShareRepositoryError::FailedReadRepoFile)?;
@@ -148,7 +148,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
                 .map_err(|_| SecretKeyShareRepositoryError::FailedDeserialize)?;
 
         let secret_key_share = serde_secret_key_share.into_inner();
-        let secret_key_share = SecretKeyShare::new(ShareIndex::new(index), secret_key_share);
+        let secret_key_share = SecretKeyShare::new(index, secret_key_share);
 
         Ok(secret_key_share)
     }
@@ -530,7 +530,10 @@ mod test {
 
         secret_key_share_repo.save(&secret_key_share).await.unwrap();
 
-        let result = secret_key_share_repo.load(0).await.unwrap();
+        let result = secret_key_share_repo
+            .load(ShareIndex::new(0))
+            .await
+            .unwrap();
 
         let serde_secret_key_share = SerdeSecret(secret_key_share.secret_key_share);
         let save_bytes = bincode::serialize(&serde_secret_key_share).unwrap();
@@ -558,7 +561,7 @@ mod test {
 
         unsetup_master_key();
 
-        let result = secret_key_share_repo.load(0).await;
+        let result = secret_key_share_repo.load(ShareIndex::new(0)).await;
 
         assert!(matches!(
             result.err().unwrap(),
@@ -579,7 +582,7 @@ mod test {
 
         setup_invalid_length_master_key();
 
-        let result = secret_key_share_repo.load(0).await;
+        let result = secret_key_share_repo.load(ShareIndex::new(0)).await;
 
         assert!(matches!(
             result.err().unwrap(),
@@ -600,7 +603,7 @@ mod test {
         let path = "invalid.enc".to_string();
         let secret_key_share_repo = build_secret_key_share_repository(path.clone());
 
-        let result = secret_key_share_repo.load(0).await;
+        let result = secret_key_share_repo.load(ShareIndex::new(0)).await;
 
         assert!(matches!(
             result.err().unwrap(),

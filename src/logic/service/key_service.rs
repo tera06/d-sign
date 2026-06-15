@@ -2,6 +2,7 @@ use crate::core::{
     model::{
         key::{CombineSignatureShares, Divisible, PublicKey, SecretKey, Signable, Verifiable},
         signature::{Digest, SignatureShare},
+        value::ShareIndex,
     },
     repository::key_repository::{PublicKeyStore, SecretKeyShareStore},
 };
@@ -80,7 +81,7 @@ where
     > {
         let secret_key_share = self
             .secret_key_share_repo
-            .load(index)
+            .load(ShareIndex::new(index))
             .await
             .map_err(|_| KeyServiceError::FailedLoadSecretKeyShare)?;
 
@@ -293,7 +294,7 @@ mod test {
             type TError = MockError;
 
             async fn save(&self, secret_key_share: &SecretKeyShare<DummySecretKeyShare>,) -> Result<(), MockError>;
-            async fn load( &self, index: usize) -> Result<SecretKeyShare<DummySecretKeyShare>, MockError>;
+            async fn load( &self, index: ShareIndex) -> Result<SecretKeyShare<DummySecretKeyShare>, MockError>;
         }
     }
 
