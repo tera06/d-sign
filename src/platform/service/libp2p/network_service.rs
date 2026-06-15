@@ -125,7 +125,7 @@ where
 {
     type TError = P2pNetworkServiceError;
 
-    async fn start_server(&self, index: usize) -> Result<(), Self::TError> {
+    async fn start_server(&self, index: ShareIndex) -> Result<(), Self::TError> {
         let mut swarm = self.create_swarm()?;
 
         let _ = swarm.listen_on(
@@ -174,41 +174,38 @@ where
                         continue;
                     }
 
-                    let response = match self
-                        .key_service
-                        .sign_message(ShareIndex::new(index), &request.message)
-                        .await
-                    {
-                        Ok(signature_share) => {
-                            let now = SystemTime::now()
-                                .duration_since(UNIX_EPOCH)
-                                .unwrap()
-                                .as_secs();
-                            let signature_share =
-                                self.encode_signature_share(&signature_share.signature_share)?;
+                    let response =
+                        match self.key_service.sign_message(index, &request.message).await {
+                            Ok(signature_share) => {
+                                let now = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs();
+                                let signature_share =
+                                    self.encode_signature_share(&signature_share.signature_share)?;
 
-                            SignResponse {
-                                request_id: request.request_id.clone(),
-                                timestamp: now,
-                                index: Some(index),
-                                sign_share: Some(signature_share),
-                                error: None,
+                                SignResponse {
+                                    request_id: request.request_id.clone(),
+                                    timestamp: now,
+                                    index: Some(index.get()),
+                                    sign_share: Some(signature_share),
+                                    error: None,
+                                }
                             }
-                        }
-                        Err(e) => {
-                            let now = SystemTime::now()
-                                .duration_since(UNIX_EPOCH)
-                                .unwrap()
-                                .as_secs();
-                            SignResponse {
-                                request_id: request.request_id.clone(),
-                                timestamp: now,
-                                index: None,
-                                sign_share: None,
-                                error: Some(format!("{}", e)),
+                            Err(e) => {
+                                let now = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs();
+                                SignResponse {
+                                    request_id: request.request_id.clone(),
+                                    timestamp: now,
+                                    index: None,
+                                    sign_share: None,
+                                    error: Some(format!("{}", e)),
+                                }
                             }
-                        }
-                    };
+                        };
 
                     let _ = swarm
                         .behaviour_mut()

@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 use crate::{
+    core::model::value::ShareIndex,
     logic::service::{
         key_service_factory::BuildKeyService, network_service::NetworkService,
         network_service_factory::BuildNetworkService,
@@ -38,7 +39,7 @@ impl AppRunner {
                     .build()
                     .map_err(|_| AppRunnerError::FailedBuildNetworkService)?;
                 network_service
-                    .start_server(index)
+                    .start_server(ShareIndex::new(index))
                     .await
                     .map_err(|_| AppRunnerError::FailedStartServer)?;
             }
