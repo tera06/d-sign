@@ -101,8 +101,8 @@ impl SecretKeyShareRepository {
 
         Some(Self { file_path, crypter })
     }
-    fn get_file_path_with_index(&self, index: usize) -> String {
-        format!("{}-{}", self.file_path, index)
+    fn get_file_path_with_index(&self, index: ShareIndex) -> String {
+        format!("{}-{}", self.file_path, index.get())
     }
 }
 
@@ -124,7 +124,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
             .encrypt_bytes(&secret_key_share_bytes)
             .map_err(|_| SecretKeyShareRepositoryError::FailedEncryptSecretKeyShare)?;
 
-        let file_path = self.get_file_path_with_index(secret_key_share.index.get());
+        let file_path = self.get_file_path_with_index(secret_key_share.index);
         let file_path = Path::new(&file_path);
         fs::write(file_path, encrypted_secret_key_share_bytes)
             .map_err(|_| SecretKeyShareRepositoryError::FailedWriteRepoFile)?;
@@ -135,7 +135,7 @@ impl SecretKeyShareStore for SecretKeyShareRepository {
         &self,
         index: ShareIndex,
     ) -> Result<crate::core::model::key::SecretKeyShare<Self::TSecretKeyShare>, Self::TError> {
-        let file_path = self.get_file_path_with_index(index.get());
+        let file_path = self.get_file_path_with_index(index);
         let file_path = Path::new(&file_path);
         let encrypted_serde_secret_key_share_bytes =
             fs::read(file_path).map_err(|_| SecretKeyShareRepositoryError::FailedReadRepoFile)?;
