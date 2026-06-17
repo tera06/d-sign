@@ -191,7 +191,7 @@ impl Crypter {
         let master_key = self.load_master_key()?;
 
         let key = Key::<Aes256Gcm>::from_slice(&master_key);
-        let cipher = Aes256Gcm::new(&key);
+        let cipher = Aes256Gcm::new(key);
         let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
         let enc_data = cipher
@@ -214,7 +214,7 @@ impl Crypter {
         let nonce = Nonce::from_slice(nonce_bytes);
 
         let key = Key::<Aes256Gcm>::from_slice(&master_key);
-        let cipher = Aes256Gcm::new(&key);
+        let cipher = Aes256Gcm::new(key);
 
         let plain_data = cipher
             .decrypt(nonce, encrypted_bytes)
@@ -310,7 +310,7 @@ mod test {
         assert!(path.exists());
 
         let plain_bytes = bincode::serialize(&public_key.public_key).unwrap();
-        let encrypted_bytes = fs::read(&path).unwrap();
+        let encrypted_bytes = fs::read(path).unwrap();
 
         assert_ne!(plain_bytes, encrypted_bytes);
 
@@ -468,7 +468,7 @@ mod test {
         let serde_secret_key_share = SerdeSecret(secret_key_share.secret_key_share.clone());
         let plain_bytes = bincode::serialize(&serde_secret_key_share).unwrap();
 
-        let encrypted_bytes = fs::read(&path).unwrap();
+        let encrypted_bytes = fs::read(path).unwrap();
         assert_ne!(plain_bytes, encrypted_bytes);
 
         fs::remove_file(path).unwrap();

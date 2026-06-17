@@ -99,9 +99,9 @@ where
 
     pub async fn verify_signature(
         &self,
-        signature_shares: &Vec<
-            SignatureShare<<V::TPublicKey as CombineSignatureShares>::TSignatureShare>,
-        >,
+        signature_shares: &[SignatureShare<
+            <V::TPublicKey as CombineSignatureShares>::TSignatureShare,
+        >],
         message: &str,
     ) -> Result<bool, KeyServiceError> {
         let public_key = self
@@ -222,7 +222,7 @@ mod test {
 
         fn combine_signature_shares(
             &self,
-            _signature_shares: &Vec<SignatureShare<Self::TSignatureShare>>,
+            _signature_shares: &[SignatureShare<Self::TSignatureShare>],
         ) -> Result<crate::core::model::signature::Signature<Self::TSignature>, Self::TError>
         {
             Ok(Signature::new(DummySignature))
@@ -267,11 +267,11 @@ mod test {
     #[derive(Error, Debug)]
     enum MockError {
         #[error("Failed to generate keys")]
-        FailedGenerateKeys,
+        GenerateKeys,
         #[error("Failed to load secret key share")]
-        FailedLoadSecretKeyShare,
+        LoadSecretKeyShare,
         #[error("Failed to load public key")]
-        FailedLoadPublicKey,
+        LoadPublicKey,
     }
 
     mock! {
@@ -376,7 +376,7 @@ mod test {
         key_generator
             .expect_generate_keys()
             .times(1)
-            .returning(|_, _| Err(MockError::FailedGenerateKeys));
+            .returning(|_, _| Err(MockError::GenerateKeys));
 
         let key_service = KeyService::new(
             public_key_repo,
@@ -436,7 +436,7 @@ mod test {
         secret_key_share_repo
             .expect_load()
             .times(1)
-            .returning(|_| Err(MockError::FailedLoadSecretKeyShare));
+            .returning(|_| Err(MockError::LoadSecretKeyShare));
 
         let key_service = KeyService::new(
             public_key_repo,
@@ -504,7 +504,7 @@ mod test {
             .expect_load()
             .times(1)
             .in_sequence(&mut seq)
-            .returning(|| Err(MockError::FailedLoadPublicKey));
+            .returning(|| Err(MockError::LoadPublicKey));
 
         let key_service = KeyService::new(
             public_key_repo,

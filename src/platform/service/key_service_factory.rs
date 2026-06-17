@@ -35,7 +35,7 @@ impl BuildKeyService<PublicKeyRepository, SecretKeyShareRepository, KeyGenerator
 
         let secret_key_share_repo =
             SecretKeyShareRepository::new("secret_key_share.enc".to_string(), crypter.clone())
-                .ok_or_else(|| KeyServiceFactoryError::FailedCreateSecretKeyShareRepository)?;
+                .ok_or(KeyServiceFactoryError::FailedCreateSecretKeyShareRepository)?;
 
         let key_generator = KeyGenerator;
         let digest_generator = DigestGenerator;

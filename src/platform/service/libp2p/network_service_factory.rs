@@ -30,9 +30,7 @@ impl BuildNetworkService for P2pNetworkServiceFactory {
 
         let secret_key_share_repo =
             SecretKeyShareRepository::new("secret_key_share.enc".to_string(), crypter.clone())
-                .ok_or_else(|| {
-                    P2pNetworkServiceFactoryError::FailedCreateSecretKeyShareRepository
-                })?;
+                .ok_or(P2pNetworkServiceFactoryError::FailedCreateSecretKeyShareRepository)?;
 
         let key_generator = KeyGenerator;
         let digest_generator = DigestGenerator;

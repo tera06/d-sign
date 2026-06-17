@@ -18,7 +18,7 @@ impl GenerateDigest for DigestGenerator {
             return Err(DigestGeneratorError::MessageIsEmpty);
         }
         let mut hasher = Sha256::new();
-        hasher.update(&message);
+        hasher.update(message);
         let digest = hasher.finalize();
 
         let digest = crate::core::model::signature::Digest::new(digest.to_vec());

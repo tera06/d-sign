@@ -32,9 +32,9 @@ impl CombineSignatureShares for threshold_crypto::PublicKeySet {
 
     fn combine_signature_shares(
         &self,
-        signature_shares: &Vec<
-            crate::core::model::signature::SignatureShare<Self::TSignatureShare>,
-        >,
+        signature_shares: &[crate::core::model::signature::SignatureShare<
+            threshold_crypto::SignatureShare,
+        >],
     ) -> Result<crate::core::model::signature::Signature<Self::TSignature>, Self::TError> {
         let shares_for_combine = signature_shares
             .iter()

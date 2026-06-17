@@ -53,7 +53,7 @@ pub trait CombineSignatureShares {
 
     fn combine_signature_shares(
         &self,
-        signature_shares: &Vec<SignatureShare<Self::TSignatureShare>>,
+        signature_shares: &[SignatureShare<Self::TSignatureShare>],
     ) -> Result<Signature<Self::TSignature>, Self::TError>;
 }
 
@@ -75,7 +75,7 @@ where
 
     pub fn combine_signature_shares(
         &self,
-        signature_shares: &Vec<SignatureShare<<T as CombineSignatureShares>::TSignatureShare>>,
+        signature_shares: &[SignatureShare<<T as CombineSignatureShares>::TSignatureShare>],
     ) -> Result<
         Signature<<T as CombineSignatureShares>::TSignature>,
         <T as CombineSignatureShares>::TError,
@@ -121,7 +121,7 @@ where
         &self,
         digest: &Digest<T::TDigest>,
     ) -> Result<SignatureShare<T::TSignatureShare>, T::TError> {
-        self.secret_key_share.sign(self.index, &digest)
+        self.secret_key_share.sign(self.index, digest)
     }
 }
 
@@ -138,13 +138,13 @@ mod tests {
     #[derive(Error, Debug, PartialEq)]
     pub enum MockError {
         #[error("Failed to verify")]
-        FailedVerify,
+        Verify,
         #[error("Failed to combine signature shares")]
-        FailedCombineSignatureShares,
+        CombineSignatureShares,
         #[error("Failed to divide")]
-        FailedDivide,
+        Divide,
         #[error("Failed to sign")]
-        FailedSign,
+        Sign,
     }
     mock! {
         pub VerifiableCombinableKey{}
@@ -168,7 +168,7 @@ mod tests {
 
             fn combine_signature_shares(
                 &self,
-                signature_shares: &Vec<SignatureShare<u32>>,
+                signature_shares: &[SignatureShare<u32>],
             ) -> Result<Signature<u32>, MockError>;
         }
     }
@@ -221,7 +221,7 @@ mod tests {
         let mut mock = MockVerifiableCombinableKey::new();
         mock.expect_verify()
             .times(1)
-            .returning(|_, _| Err(MockError::FailedVerify));
+            .returning(|_, _| Err(MockError::Verify));
 
         let public_key = PublicKey::new(mock);
         let signature = Signature::new(10);
@@ -230,7 +230,7 @@ mod tests {
         let result = public_key.verify(&signature, &digest);
 
         let err = result.err().unwrap();
-        assert_eq!(err, MockError::FailedVerify);
+        assert_eq!(err, MockError::Verify);
     }
 
     #[test]
@@ -258,7 +258,7 @@ mod tests {
         let mut mock = MockVerifiableCombinableKey::new();
         mock.expect_combine_signature_shares()
             .times(1)
-            .returning(|_| Err(MockError::FailedCombineSignatureShares));
+            .returning(|_| Err(MockError::CombineSignatureShares));
 
         let public_key = PublicKey::new(mock);
 
@@ -269,7 +269,7 @@ mod tests {
         let result = public_key.combine_signature_shares(&signature_shares);
         let err = result.err().unwrap();
 
-        assert_eq!(err, MockError::FailedCombineSignatureShares);
+        assert_eq!(err, MockError::CombineSignatureShares);
     }
 
     #[test]
@@ -324,15 +324,15 @@ mod tests {
     #[test]
     fn test_secret_key_divide_return_error_if_internal_divide_failed() {
         let mut mock = MockDivisibleKey::new();
-        mock.expect_divide().times(1).returning(|_| {
-            return Err(MockError::FailedDivide);
-        });
+        mock.expect_divide()
+            .times(1)
+            .returning(|_| Err(MockError::Divide));
 
         let secret_key = SecretKey::new(1, 2, mock).unwrap();
         let result = secret_key.divide();
         let err = result.err().unwrap();
 
-        assert_eq!(err, MockError::FailedDivide);
+        assert_eq!(err, MockError::Divide);
     }
 
     #[test]
@@ -354,12 +354,12 @@ mod tests {
         let mut mock = MockSignableShare::new();
         mock.expect_sign()
             .times(1)
-            .returning(|_, _| Err(MockError::FailedSign));
+            .returning(|_, _| Err(MockError::Sign));
         let secret_key_share = SecretKeyShare::new(ShareIndex::new(1), mock);
         let digest = Digest::new(100);
         let result = secret_key_share.sign(&digest);
 
         let err = result.err().unwrap();
-        assert_eq!(err, MockError::FailedSign);
+        assert_eq!(err, MockError::Sign);
     }
 }
