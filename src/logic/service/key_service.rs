@@ -1,6 +1,6 @@
 use crate::core::{
     model::{
-        key::{CombineSignatureShares, Divisible, PublicKey, SecretKey, Signable, Verifiable},
+        key::{CombineSignatureShares, Divisible, KeyPair, Signable, Verifiable},
         signature::{Digest, SignatureShare},
         value::ShareIndex,
     },
@@ -46,7 +46,10 @@ where
         threshold: usize,
         num_divide: usize,
     ) -> Result<(), KeyServiceError> {
-        let (public_key, secret_key) = self
+        let KeyPair {
+            public_key,
+            secret_key,
+        } = self
             .key_generator
             .generate_keys(threshold, num_divide)
             .map_err(|_| KeyServiceError::FailedGenerateKeys)?;
@@ -167,7 +170,7 @@ pub trait GenerateKey {
         &self,
         threshold: usize,
         num_divide: usize,
-    ) -> Result<(PublicKey<Self::TPublicKey>, SecretKey<Self::TSecretKey>), Self::TError>;
+    ) -> Result<KeyPair<Self::TPublicKey, Self::TSecretKey>, Self::TError>;
 }
 
 pub trait GenerateDigest {
@@ -182,6 +185,8 @@ mod test {
 
     use mockall::{Sequence, mock};
 
+    use crate::core::model::key::PublicKey;
+    use crate::core::model::key::SecretKey;
     use crate::core::model::value::ShareIndex;
     use crate::core::model::{key::SecretKeyShare, signature::Signature};
     use crate::core::repository::key_repository::PublicKeyStore;
@@ -309,7 +314,7 @@ mod test {
                 &self,
                 threshold: usize,
                 num_divide: usize,
-            ) -> Result<(PublicKey<DummyPublicKey>, SecretKey<DummySecretKey>), MockError>;
+            ) -> Result<KeyPair<DummyPublicKey,DummySecretKey>, MockError>;
         }
     }
 
@@ -337,10 +342,10 @@ mod test {
             .times(1)
             .in_sequence(&mut sequence)
             .returning(|_, _| {
-                Ok((
-                    PublicKey::new(DummyPublicKey),
-                    SecretKey::new(2, 3, DummySecretKey).unwrap(),
-                ))
+                Ok(KeyPair {
+                    public_key: PublicKey::new(DummyPublicKey),
+                    secret_key: SecretKey::new(2, 3, DummySecretKey).unwrap(),
+                })
             });
 
         public_key_repo

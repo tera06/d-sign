@@ -3,7 +3,7 @@ use thiserror::Error;
 use threshold_crypto::SecretKeySet;
 
 use crate::{
-    core::model::key::{PublicKey, SecretKey},
+    core::model::key::{KeyPair, PublicKey, SecretKey},
     logic::service::key_service::GenerateKey,
 };
 
@@ -20,13 +20,7 @@ impl GenerateKey for KeyGenerator {
         &self,
         threshold: usize,
         num_divide: usize,
-    ) -> Result<
-        (
-            crate::core::model::key::PublicKey<Self::TPublicKey>,
-            crate::core::model::key::SecretKey<Self::TSecretKey>,
-        ),
-        Self::TError,
-    > {
+    ) -> Result<KeyPair<Self::TPublicKey, Self::TSecretKey>, Self::TError> {
         if (threshold > num_divide) || (num_divide < 1) || (threshold < 1) {
             return Err(KeyGeneratorError::InvalidArgument);
         }
@@ -38,7 +32,10 @@ impl GenerateKey for KeyGenerator {
         let secret_key = SecretKey::new(threshold, num_divide, secret_key_set)
             .ok_or(KeyGeneratorError::FailedGenerateSecretKey)?;
 
-        Ok((public_key, secret_key))
+        Ok(KeyPair {
+            public_key,
+            secret_key,
+        })
     }
 }
 

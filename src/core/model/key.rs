@@ -10,6 +10,11 @@ pub struct SecretKey<T> {
     num_key_shares: usize,
     secret_key: T,
 }
+
+pub struct KeyPair<PK, SK> {
+    pub public_key: PublicKey<PK>,
+    pub secret_key: SecretKey<SK>,
+}
 pub struct SecretKeyShare<T> {
     pub index: ShareIndex,
     pub secret_key_share: T,

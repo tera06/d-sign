@@ -336,7 +336,7 @@ async fn client_sign(message: &str, threshold: usize) -> Result<()> {
     let digest = hasher.finalize();
 
     let pk = pubset.public_key();
-    if pk.verify(&combined_sig, &digest) {
+    if pk.verify(&combined_sig, digest) {
         let sig_bytes = bincode::serialize(&combined_sig)?;
         info!("署名の検証に成功しました！");
         println!("---");
@@ -404,7 +404,7 @@ async fn handle_sign_request(
     hasher.update(&msg);
     let digest = hasher.finalize();
 
-    let sigshare = share.sign(&digest);
+    let sigshare = share.sign(digest);
     let bytes = bincode::serialize(&sigshare)?;
     let b64 = general_purpose::STANDARD.encode(&bytes);
     Ok((b64, digest.to_vec()))
